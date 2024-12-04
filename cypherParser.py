@@ -1,7 +1,11 @@
 import re
 import json
+from pymongo import MongoClient
 
 def parse_cypher_to_json(input_file="grafoEjemplos", output_file="output.json"):
+    
+    MONGO_URI = 'mongodb+srv://admin_demo:TM0SOlhMZTpecJeR@cluster0.z05nk.mongodb.net/'
+    DATABASE_NAME = 'matrix_database'
     # Read Cypher text from file
     try:
         with open(input_file, 'r') as file:
@@ -10,16 +14,26 @@ def parse_cypher_to_json(input_file="grafoEjemplos", output_file="output.json"):
         print(f"Error: The file '{input_file}' was not found.")
         return
     
-    # Initialize data structures
-    nodes = {}
-    links = []
+    # Connect to MongoDB
+    client = MongoClient(MONGO_URI)
+    db = client[DATABASE_NAME]
+    
+    # Create or clear collections
+    nodes_collection = db['nodes']
+    relationships_collection = db['relationships']
+    
+    # Clear existing data
+    nodes_collection.delete_many({})
+    relationships_collection.delete_many({})
     
     # Regular expressions for parsing
     node_pattern = r'CREATE \((\w+):(\w+) \{([^}]+)\}\)'
     relationship_pattern = r'\((\w+)\)-\[:(\w+) ?(?:\{[^}]+\})?\]->\((\w+)\)'
     
-    # Parse nodes first
+    # Parse and insert nodes
     node_matches = re.findall(node_pattern, cypher_text)
+    nodes_to_insert = []
+    
     for match in node_matches:
         node_id, node_type, props_str = match
         props = dict(re.findall(r'(\w+):([^,}]+)', props_str))
@@ -31,44 +45,52 @@ def parse_cypher_to_json(input_file="grafoEjemplos", output_file="output.json"):
             except ValueError:
                 props[key] = props[key].strip("'")
         
-        nodes[node_id] = {
-            "id": node_id,
-            "label": props.get("name", props.get("title", node_id)),
-            "type": node_type,
-            "properties": props
+        # Add _id and type to props
+        node_doc = {
+            '_id': node_id,
+            'type': node_type,
+            **props
         }
+        
+        nodes_to_insert.append(node_doc)
     
-    # Parse relationships
+    # Bulk insert nodes
+    if nodes_to_insert:
+        nodes_collection.insert_many(nodes_to_insert)
+    
+    # Parse and insert relationships
     rel_matches = re.findall(relationship_pattern, cypher_text)
+    relationships_to_insert = []
+    
     for match in rel_matches:
         source, rel_type, target = match
         
-        # Ensure both source and target nodes exist
-        if source not in nodes or target not in nodes:
-            print(f"Warning: Skipping link from {source} to {target} - node not found")
-            continue
+        # Prepare relationship document
+        rel_doc = {
+            'from': source,
+            'to': target,
+            'type': rel_type
+        }
         
-        links.append({
-            "source": source,
-            "target": target,
-            "type": rel_type
-        })
+        # Add roles if present in relationship (for ACTED_IN)
+        role_pattern = rf'\(({re.escape(source)})\)-\[:ACTED_IN \{{roles:\[\'([^\']+)\'\]}}\]->\(({re.escape(target)})\)'
+        role_match = re.search(role_pattern, cypher_text)
+        
+        if role_match:
+            rel_doc['roles'] = [role_match.group(2)]
+        
+        relationships_to_insert.append(rel_doc)
     
-    # Prepare D3.js compatible JSON
-    result = {
-        "nodes": list(nodes.values()),
-        "links": links
-    }
+    # Bulk insert relationships
+    if relationships_to_insert:
+        relationships_collection.insert_many(relationships_to_insert)
     
-    # Output to file
-    try:
-        with open(output_file, 'w') as file:
-            json.dump(result, file, indent=2)
-        print(f"JSON saved to {output_file}")
-    except Exception as e:
-        print(f"Error writing to file: {e}")
+    # Print summary
+    print(f"Imported {len(nodes_to_insert)} nodes")
+    print(f"Imported {len(relationships_to_insert)} relationships")
     
-    return result
+    # Close MongoDB connection
+    client.close()
 
 # Automatically execute the script
 if __name__ == "__main__":
