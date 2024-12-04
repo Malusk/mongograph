@@ -1,0 +1,143 @@
+[
+    {
+        "_id": "Keanu",
+        "nodes": [
+            {
+                "id": "JohnnyMnemonic",
+                "label": "Johnny Mnemonic",
+                "type": "Movie",
+                "properties": {
+                    "title": "Johnny Mnemonic",
+                    "released": 1995,
+                    "tagline": "The hottest data on earth. In the coolest head in town"
+                }
+            },
+            {
+                "id": "Keanu",
+                "label": "Keanu Reeves",
+                "type": "Person",
+                "properties": {
+                    "name": "Keanu Reeves",
+                    "born": 1964
+                }
+            },
+            {
+                "id": "SomethingsGottaGive",
+                "label": "\"Something's Gotta Give\"",
+                "type": "Movie",
+                "properties": {
+                    "title": "\"Something's Gotta Give\"",
+                    "released": 2003
+                }
+            },
+            {
+                "id": "TheDevilsAdvocate",
+                "label": "\"The Devil's Advocate\"",
+                "type": "Movie",
+                "properties": {
+                    "title": "\"The Devil's Advocate\"",
+                    "released": 1997,
+                    "tagline": "Evil has its winning ways"
+                }
+            },
+            {
+                "id": "TheMatrix",
+                "label": "The Matrix",
+                "type": "Movie",
+                "properties": {
+                    "title": "The Matrix",
+                    "released": 1999,
+                    "tagline": "Welcome to the Real World"
+                }
+            },
+            {
+                "id": "TheMatrixReloaded",
+                "label": "The Matrix Reloaded",
+                "type": "Movie",
+                "properties": {
+                    "title": "The Matrix Reloaded",
+                    "released": 2003,
+                    "tagline": "Free your mind"
+                }
+            },
+            {
+                "id": "TheMatrixRevolutions",
+                "label": "The Matrix Revolutions",
+                "type": "Movie",
+                "properties": {
+                    "title": "The Matrix Revolutions",
+                    "released": 2003,
+                    "tagline": "Everything that has a beginning has an end"
+                }
+            },
+            {
+                "id": "TheReplacements",
+                "label": "The Replacements",
+                "type": "Movie",
+                "properties": {
+                    "title": "The Replacements",
+                    "released": 2000,
+                    "tagline": "Pain heals"
+                }
+            }
+        ],
+        "links": [
+            {
+                "source": "Keanu",
+                "target": "TheMatrix",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Neo"
+                ]
+            },
+            {
+                "source": "Keanu",
+                "target": "TheMatrixRevolutions",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Neo"
+                ]
+            },
+            {
+                "source": "Keanu",
+                "target": "SomethingsGottaGive",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Julian Mercer"
+                ]
+            },
+            {
+                "source": "Keanu",
+                "target": "TheMatrixReloaded",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Neo"
+                ]
+            },
+            {
+                "source": "Keanu",
+                "target": "JohnnyMnemonic",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Johnny Mnemonic"
+                ]
+            },
+            {
+                "source": "Keanu",
+                "target": "TheReplacements",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Shane Falco"
+                ]
+            },
+            {
+                "source": "Keanu",
+                "target": "TheDevilsAdvocate",
+                "type": "ACTED_IN",
+                "roles": [
+                    "Kevin Lomax"
+                ]
+            }
+        ]
+    }
+]

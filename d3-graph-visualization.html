@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Aggregation Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f1e1f;
+            color: #e8f5e9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #13aa52;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #b9fbc0;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #13aa52;
+            border-radius: 5px;
+            background-color: #1a2e2b;
+            color: white;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #13aa52;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0e8c44;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #13aa52;
+            border-radius: 5px;
+            background-color: #1a2e2b;
+            color: white;
+            resize: none;
+        }
+
+        .footer {
+            text-align: center;
+            color: #b9fbc0;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        MongoDB Aggregation Visualizer
+    </div>
+    <div class="container">
+        <form id="pipelineForm">
+            <div class="form-group">
+                <label for="node_id">Enter Node ID:</label>
+                <input type="text" id="node_id" name="node_id" placeholder="e.g., LanaW" required>
+            </div>
+            <button type="submit">Execute Aggregation</button>
+        </form>
+        <h2>Input Document</h2>
+        <textarea id="inputDoc" readonly></textarea>
+        <h2>Output Document</h2>
+        <textarea id="outputDoc" readonly></textarea>
+    </div>
+    <div class="footer">
+        Powered by MongoDB
+    </div>
+    <script>
+        document.getElementById("pipelineForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const node_id = document.getElementById("node_id").value;
+
+            const response = await fetch("/execute", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `node_id=${encodeURIComponent(node_id)}`
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                alert("Error: " + data.error);
+            } else {
+                document.getElementById("inputDoc").value = JSON.stringify(data.input_document, null, 4);
+                document.getElementById("outputDoc").value = JSON.stringify(data.output_document, null, 4);
+            }
+        });
+    </script>
+</body>
+</html>
