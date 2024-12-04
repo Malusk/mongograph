@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Aggregation Visualizer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f1e1f;
+            color: #e8f5e9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #13aa52;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        label {
+            font-weight: bold;
+            color: #b9fbc0;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #13aa52;
+        }
+
+        input {
+            background-color: #1a2e2b;
+            color: white;
+        }
+
+        button {
+            background-color: #13aa52;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0e8c44;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-top: 10px;
+            border-radius: 5px;
+            background-color: #1a2e2b;
+            color: white;
+        }
+
+        .graph {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">MongoDB Aggregation Visualizer</div>
+    <div class="container">
+        <form id="pipelineForm">
+            <label for="node_id">Enter Node ID:</label>
+            <input type="text" id="node_id" name="node_id" placeholder="e.g., LanaW" required>
+
+            <label for="depth">Enter Depth:</label>
+            <input type="number" id="depth" name="depth" placeholder="e.g., 2" required>
+
+            <button type="submit">Execute Aggregation</button>
+        </form>
+
+        <h2>Input Document</h2>
+        <textarea id="inputDoc" readonly></textarea>
+        <h2>Output Document</h2>
+        <textarea id="outputDoc" readonly></textarea>
+
+        <h2>Graph Visualization</h2>
+        <div id="graph" class="graph"></div>
+    </div>
+
+    <script>
+        document.getElementById("pipelineForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const node_id = document.getElementById("node_id").value;
+            const depth = document.getElementById("depth").value;
+
+            const response = await fetch("/execute", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `node_id=${encodeURIComponent(node_id)}&depth=${encodeURIComponent(depth)}`
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                alert("Error: " + data.error);
+            } else {
+                document.getElementById("inputDoc").value = JSON.stringify(data.input_document, null, 4);
+                document.getElementById("outputDoc").value = JSON.stringify(data.output_document, null, 4);
+
+                // Render graph with D3.js
+                renderGraph(data.output_document[0]); // Pass the first result
+            }
+        });
+
+        function renderGraph(data) {
+            document.getElementById("graph").innerHTML = ""; // Clear previous graph
+        
+            const width = 1200, height = 600; // Increase size of the visualization
+        
+            const svg = d3.select("#graph")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+        
+            const simulation = d3.forceSimulation(data.nodes)
+                .force("link", d3.forceLink(data.links).id(d => d.id).distance(200)) // Adjust link distance for better spacing
+                .force("charge", d3.forceManyBody().strength(-500)) // Space nodes out more
+                .force("center", d3.forceCenter(width / 2, height / 2));
+        
+            // Draw links
+            const link = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(data.links)
+                .enter().append("line")
+                .attr("stroke-width", 2)
+                .attr("stroke", "#999");
+        
+            // Draw nodes
+            const node = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("circle")
+                .data(data.nodes)
+                .enter().append("circle")
+                .attr("r", 10) // Make nodes larger
+                .attr("fill", "#13aa52") // Green color for nodes
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+        
+            // Add labels
+            const labels = svg.append("g")
+                .selectAll("text")
+                .data(data.nodes)
+                .enter().append("text")
+                .text(d => d.label) // Use the 'label' field for names
+                .attr("fill", "white") // White color for labels
+                .attr("font-size", "14px") // Adjust font size
+                .attr("dx", 12) // Offset x position for label placement
+                .attr("dy", 4); // Offset y position for label placement
+        
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+        
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+        
+                labels
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            });
+        
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+        
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+        
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        }
+    </script>
+</body>
+</html>
